@@ -10,3 +10,11 @@ Cargo.lock
 **/*.rs.bk
 
 package-lock.json
+
+target/
+
+node_modules/
+
+*.pdf
+
+*.DS_Store

@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{pubkey::Pubkey};
+// use solana_program::{pubkey::Pubkey};
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
 pub struct AuthorizedBufferHeader {
@@ -12,6 +12,6 @@ pub struct AuthorizedBufferHeader {
 pub struct VendingMachineBufferHeader {
     pub bump_seed: u8,
     pub price: u64,
-    pub vending_machine_mint: Pubkey,
+    // pub vending_machine_mint: Pubkey,
     pub echo_data: Vec<u8>,
 }

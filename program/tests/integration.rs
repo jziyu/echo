@@ -6,7 +6,7 @@ use echo::state::{AuthorizedBufferHeader, VendingMachineBufferHeader};
 
 use assert_matches::*;
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_client::client_error::{ClientError, ClientErrorKind};
+use solana_client::client_error::{ClientError/*, ClientErrorKind*/};
 // use solana_client::rpc_client::RpcClient;
 use solana_sdk::account::ReadableAccount;
 use solana_sdk::instruction::AccountMeta;
@@ -220,7 +220,7 @@ fn test_authorized_echo() -> anyhow::Result<()> {
     );
     transaction.sign(&[&payer], blockhash);
     rpc_client.send_and_confirm_transaction(&transaction)?;
-    let account = rpc_client.get_account(&pda)?;
+    // let account = rpc_client.get_account(&pda)?;
 
     let blockhash = rpc_client.get_latest_blockhash()?;
     let mut transaction = Transaction::new_signed_with_payer(

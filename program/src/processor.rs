@@ -172,7 +172,7 @@ impl Processor {
                 let vending_machine_buffer = next_account_info(accounts_iter)?;
                 let vending_machine_mint = next_account_info(accounts_iter)?;
                 let payer = next_account_info(accounts_iter)?;
-                let system_program = next_account_info(accounts_iter)?;
+                // let system_program = next_account_info(accounts_iter)?;
 
                 // check signer 
                 if !payer.is_signer {
@@ -180,6 +180,8 @@ impl Processor {
                 }
 
                 assert_is_writable(vending_machine_buffer)?;
+
+                // msg!("Before");
 
                 let (authorithed_buffer_key, bump_seed) = Pubkey::find_program_address(
                     &[
@@ -189,6 +191,8 @@ impl Processor {
                     ],
                     program_id,
                 );
+
+                // msg!("AfterPDA");
 
                 // Check Authority
                 if authorithed_buffer_key != *vending_machine_buffer.key {
@@ -200,17 +204,19 @@ impl Processor {
                     &system_instruction::create_account(
                         payer.key,
                         vending_machine_buffer.key,
-                        Rent::get()?.minimum_balance(buffer_size) as u64,
+                        Rent::get()?.minimum_balance(buffer_size),
                         buffer_size as u64,
                         program_id,
                     ),
                     &[payer.clone(), vending_machine_buffer.clone()],
-                    &[&[b"authority", vending_machine_mint.key.as_ref(), &price.to_le_bytes(), &[bump_seed]]],
+                    &[&[b"vending_machine", vending_machine_mint.key.as_ref(), &price.to_le_bytes(), &[bump_seed]]],
                 )?;
+                
+                // msg!("AfterCPI");
 
                 // Setting up authorized buffer
-                let echo_data = vec![0; buffer_size - 1 - 8 - 4 - 4];
-                let buffer_data = VendingMachineBufferHeader { bump_seed, price, vending_machine_mint:*vending_machine_mint.key, echo_data };
+                let echo_data = vec![0; buffer_size - 1 - 8 - 4];
+                let buffer_data = VendingMachineBufferHeader { bump_seed, price,echo_data };
                 let mut vending_buffer_data = vending_machine_buffer.try_borrow_mut_data()?;
                 buffer_data.serialize(&mut *vending_buffer_data)?;
 
@@ -226,7 +232,7 @@ impl Processor {
                 let user = next_account_info(accounts_iter)?;
                 let user_token_account = next_account_info(accounts_iter)?;
                 let vending_machine_mint = next_account_info(accounts_iter)?;
-                let token_program = next_account_info(accounts_iter)?;
+                // let token_program = next_account_info(accounts_iter)?;
                 
 
                 if !user.is_signer {
@@ -237,6 +243,8 @@ impl Processor {
                 assert_is_writable(user_token_account)?;
                 assert_is_writable(vending_machine_mint)?;
 
+                msg!("AfterCheck");
+
                 let mut vending_buffer = VendingMachineBufferHeader::try_from_slice(&vending_machine_buffer.data.borrow())?;
 
                 let vending_seeds = &[b"vending_machine",vending_machine_mint.key.as_ref(), &vending_buffer.price.to_le_bytes(), &[vending_buffer.bump_seed]];                
@@ -245,6 +253,8 @@ impl Processor {
                 if vending_buffer_key != *vending_machine_buffer.key {
                     return Err(EchoError::InvalidAuthority.into());
                 }
+
+                msg!("BeforeCPI");
 
                 // Burn price amount of tokens from user_token_account
                 invoke(
@@ -259,14 +269,19 @@ impl Processor {
                     &[user_token_account.clone(), vending_machine_mint.clone(), user.clone()],
                 )?;
 
+                msg!("AfterCPI");
 
 
                 vending_buffer.echo_data.fill(0);
                 let min_of_len = std::cmp::min(vending_buffer.echo_data.len(), data.len());
                 vending_buffer.echo_data.copy_from_slice(&data[..min_of_len]);
+                // vending_buffer.echo_data.copy_from_slice(&data);
                 vending_buffer.serialize(&mut *vending_machine_buffer.data.borrow_mut())?;
 
+                msg!("{:?}", data);
+                msg!("{:?}", &vending_buffer.echo_data);
 
+                msg!("Instruction: VendingMachineEcho END & SUCCESS");
                 
                 Ok(())
             }
